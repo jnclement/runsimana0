@@ -1,0 +1,10 @@
+executable = firstcondor.sh
+arguments = $(Process)
+output = output/out/outputmbhijing$(Process).out
+transfer_input_files	= /sphenix/user/jocl/projects/testinstall/lib/libmdctreemaker.so
+should_transfer_files	= IF_NEEDED
+when_to_transfer_output = ON_EXIT
+transfer_output_files	= events_$(Process).root to=output/evt/
+error			= output/err/errormbhijing$(Process).err
+log = output/log/logmbhijing$(Process).log
+queue 500
