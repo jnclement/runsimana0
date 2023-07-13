@@ -1,7 +1,7 @@
 #!/bin/bash
 
-NEVT=$2
-bash createfilelistcommand $NEVT
+#NEVT=$2
+#bash createfilelistcommand $NEVT
 a=($(wc dst_global.list))
 NFILES=${a[0]}
 
