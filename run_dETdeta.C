@@ -61,7 +61,7 @@ int run_dETdeta(int nproc = 0, string tag = "", int datormc = 0, int debug = 0)
   MDCTreeMaker *tt = new MDCTreeMaker( filename, datormc, debug );
   se->registerSubsystem( tt );
   se->Print("NODETREE");
-  se->run(10);
+  se->run();
   se->End();
   std::cout << "All done" << std::endl;
   delete se;
