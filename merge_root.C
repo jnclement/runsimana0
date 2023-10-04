@@ -27,11 +27,13 @@
 #include <algorithm>
 #include "TChain.h"
 
-int merge_root(int nfiles)
+int merge_root(int nfiles, string tag, int datormc)
 {
   TChain ch("ttree");
   string filename;
-  string base = "output/evt/events_";
+  string base = "output/evt/events_"+tag+(tag!=""?"_":"");
+  string dmc = (!datormc?"data_":"mc_");
+  base += dmc;
   string ext = ".root";
   for(int i=0; i<nfiles; i++)
     {
@@ -39,6 +41,7 @@ int merge_root(int nfiles)
       filename = base;
       filename += to_string(i);
       filename += ext;
+      cout << filename << endl;
       const char *alsofile = filename.c_str();
       try
 	{
@@ -49,7 +52,7 @@ int merge_root(int nfiles)
 	  continue;
 	}
     }
-  filename = "results/merged_dEdeta_" + to_string(nfiles) + ext;
+  filename = "results/merged_dEdeta_" +tag+(tag!=""?"_":"") + dmc + to_string(nfiles) + ext;
   ch.Merge(filename.c_str());
   return 0;
 }

@@ -47,10 +47,13 @@ int run_dETdeta(int nproc = 0, string tag = "", int datormc = 0, int debug = 0)
   string line1;
   ifstream list2;
   string line2;
+  ifstream list3;
+  string line3;
   if(datormc)
     {
       list1.open("/sphenix/user/jocl/projects/sandbox/run/dst_calo_cluster.list");
       list2.open("/sphenix/user/jocl/projects/sandbox/run/dst_global.list");
+      list3.open("/sphenix/user/jocl/projects/sandbox/run/dst_truth.list");
     }
   else
     {
@@ -59,15 +62,28 @@ int run_dETdeta(int nproc = 0, string tag = "", int datormc = 0, int debug = 0)
   for(int i=0; i<nproc+1; i++)
     {
       getline(list1, line1);
-      if(datormc) getline(list2, line2);
+      if(datormc)
+	{
+	  getline(list2, line2);
+	  getline(list3, line3);
+	}
     }
 
   Fun4AllInputManager *in_1 = new Fun4AllDstInputManager("DSTin1");
   Fun4AllInputManager *in_2 = new Fun4AllDstInputManager("DSTin2");
+  Fun4AllInputManager *in_3 = new Fun4AllDstInputManager("DSTin3");
   in_1->AddFile(line1);
-  if(datormc) in_2->AddFile(line2);
+  if(datormc)
+    {
+      in_2->AddFile(line2);
+      in_3->AddFile(line3);
+    }
   se->registerInputManager( in_1 );
-  if(datormc) se->registerInputManager(in_2);
+  if(datormc)
+    {
+      se->registerInputManager(in_2);
+      se->registerInputManager(in_3);
+    }
   rc->set_StringFlag("CDB_GLOBALTAG","ProdA_2023"); // this points to the global tag in the CDB
   // The calibrations have a validity range set by the beam clock which is not read out of the prdfs as of now
   rc->set_uint64Flag("TIMESTAMP",0);
