@@ -27,7 +27,7 @@
 #include <algorithm>
 #include "TChain.h"
 
-int merge_root(int nfiles, string particle)
+int merge_root(int nfiles)
 {
   TChain ch("ttree");
   string filename;
@@ -35,6 +35,7 @@ int merge_root(int nfiles, string particle)
   string ext = ".root";
   for(int i=0; i<nfiles; i++)
     {
+      if(i%10==0) cout << i << endl;
       filename = base;
       filename += to_string(i);
       filename += ext;
@@ -48,7 +49,7 @@ int merge_root(int nfiles, string particle)
 	  continue;
 	}
     }
-  filename = "results/" + particle + to_string(nfiles) + ext;
+  filename = "results/merged_dEdeta_" + to_string(nfiles) + ext;
   ch.Merge(filename.c_str());
   return 0;
 }

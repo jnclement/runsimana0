@@ -44,22 +44,23 @@ int run_macro(int nproc = 0)
   recoConsts *rc = recoConsts::instance();
   ifstream list1;
   ifstream list2;
-  ifstream list3;
-  ifstream list4;
+  //ifstream list3;
+  //ifstream list4;
   string line1;
   string line2;
-  string line3;
-  string line4;
+  //string line3;
+  //string line4;
+  //list1.open("/sphenix/user/jocl/projects/sandbox/run/dsts_dEdeta_study");
   list1.open("/sphenix/user/jocl/projects/sandbox/run/dst_global.list", ifstream::in);
-  list2.open("/sphenix/user/jocl/projects/sandbox/run/dst_truth_g4hit.list", ifstream::in);
-  list3.open("/sphenix/user/jocl/projects/sandbox/run/dst_calo_cluster.list", ifstream::in);
-  list4.open("/sphenix/user/jocl/projects/sandbox/run/dst_truth_jet.list", ifstream::in);
+  list2.open("/sphenix/user/jocl/projects/sandbox/run/dst_calo_cluster.list", ifstream::in);
+  //list3.open("/sphenix/user/jocl/projects/sandbox/run/dst_calo_cluster.list", ifstream::in);
+  //list4.open("/sphenix/user/jocl/projects/sandbox/run/dst_truth_jet.list", ifstream::in);
   for(int i=0; i<nproc+1; i++)
     {
       getline(list1, line1);
       getline(list2, line2);
-      getline(list3, line3);
-      getline(list4, line4);
+      //getline(list3, line3);
+      //getline(list4, line4);
     }
   cout <<"Filename: "<< line1 << endl;
 
@@ -70,7 +71,7 @@ int run_macro(int nproc = 0)
   Fun4AllInputManager *in_2 = new Fun4AllDstInputManager("DSTin2");
   in_2->AddFile(line2);
   se->registerInputManager( in_2 );
-  
+  /*
   Fun4AllInputManager *in_3 = new Fun4AllDstInputManager("DSTin3");
   in_3->AddFile(line3);//"/sphenix/user/jocl/projects/sandbox/dst_truth.list");
   se->registerInputManager( in_3 );
@@ -78,9 +79,10 @@ int run_macro(int nproc = 0)
   Fun4AllInputManager *in_4 = new Fun4AllDstInputManager("DSTin4");
   in_4->AddFile(line4);
   se->registerInputManager( in_4 );
-  
+  */
   //cout << "test1" << endl;
   // tower jets
+  /*
   JetReco *towerjetreco = new JetReco("TOWERJETRECO");
   towerjetreco->add_input(new TowerJetInput(Jet::CEMC_TOWER));
   towerjetreco->add_input(new TowerJetInput(Jet::HCALIN_TOWER));
@@ -99,6 +101,7 @@ int run_macro(int nproc = 0)
   se->registerSubsystem(truthjetreco);
   se->Print("NODETREE");
   int cont = 0;
+  */
   // cin >> cont;
   cout << "test2" << endl;
   MDCTreeMaker *tt = new MDCTreeMaker( filename );

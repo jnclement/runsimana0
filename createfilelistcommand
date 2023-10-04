@@ -1,1 +1,1 @@
-CreateFileList.pl -type 4 -run 6 -nopileup -n $1 DST_GLOBAL G4Hits DST_CALO_CLUSTER
+CreateFileList.pl -type 4 -n 100000 DST_GLOBAL DST_CALO_CLUSTER

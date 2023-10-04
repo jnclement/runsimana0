@@ -1,0 +1,8 @@
+executable = combine_condor.sh
+output = output/out/outputtest$(Process).out
+should_transfer_files	= IF_NEEDED
+when_to_transfer_output = ON_EXIT
+transfer_output_files	= events_$(Process).root to=output/evt/
+error			= output/err/errortest$(Process).err
+log = output/log/logtest$(Process).log
+queue 1
