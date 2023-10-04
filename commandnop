@@ -1,0 +1,1 @@
+CreateFileList.pl -type 4 -run 6 -nopileup -n $2 DST_GLOBAL
