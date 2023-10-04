@@ -27,8 +27,9 @@ R__LOAD_LIBRARY(libcalo_reco.so)
 int run_dETdeta(int nproc = 0, string tag = "", int datormc = 0, int debug = 0)
 {
   int verbosity = 0;
-  string filename = "events_";
-  filename += to_string(nproc);
+  string filename = "events_"+tag+(tag==""?"":"_");
+  string dattag = (datormc?"mc":"data");
+  filename += dattag + "_" + to_string(nproc);
   filename += ".root";
   FROG *fr = new FROG();
     
@@ -44,16 +45,29 @@ int run_dETdeta(int nproc = 0, string tag = "", int datormc = 0, int debug = 0)
   recoConsts *rc = recoConsts::instance();
   ifstream list1;
   string line1;
-  list1.open("/sphenix/user/jocl/projects/sandbox/run/dsts_dEdeta_study", ifstream::in);
+  ifstream list2;
+  string line2;
+  if(datormc)
+    {
+      list1.open("/sphenix/user/jocl/projects/sandbox/run/dst_calo_cluster.list");
+      list2.open("/sphenix/user/jocl/projects/sandbox/run/dst_global.list");
+    }
+  else
+    {
+      list1.open("/sphenix/user/jocl/projects/sandbox/run/dsts_dEdeta_study", ifstream::in);
+    }
   for(int i=0; i<nproc+1; i++)
     {
       getline(list1, line1);
+      if(datormc) getline(list2, line2);
     }
-  cout <<"Filename: "<< line1 << endl;
 
   Fun4AllInputManager *in_1 = new Fun4AllDstInputManager("DSTin1");
+  Fun4AllInputManager *in_2 = new Fun4AllDstInputManager("DSTin2");
   in_1->AddFile(line1);
+  if(datormc) in_2->AddFile(line2);
   se->registerInputManager( in_1 );
+  if(datormc) se->registerInputManager(in_2);
   rc->set_StringFlag("CDB_GLOBALTAG","ProdA_2023"); // this points to the global tag in the CDB
   // The calibrations have a validity range set by the beam clock which is not read out of the prdfs as of now
   rc->set_uint64Flag("TIMESTAMP",0);
@@ -63,7 +77,6 @@ int run_dETdeta(int nproc = 0, string tag = "", int datormc = 0, int debug = 0)
   se->Print("NODETREE");
   se->run();
   se->End();
-  std::cout << "All done" << std::endl;
   delete se;
   gSystem->Exit(0);
   

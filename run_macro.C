@@ -24,10 +24,10 @@ R__LOAD_LIBRARY(libfun4all.so)
 R__LOAD_LIBRARY(libmdctreemaker.so)
 R__LOAD_LIBRARY(libcalo_io.so)
 
-int run_macro(int nproc = 0)
+int run_macro(int nproc = 0, string tag = "", int datormc = 0, int debug = 0)
 {
   int verbosity = 0;
-  string filename = "events_";
+  string filename = "events_"+tag+"_";
   filename += to_string(nproc);
   filename += ".root";
   FROG *fr = new FROG();
@@ -62,7 +62,7 @@ int run_macro(int nproc = 0)
       //getline(list3, line3);
       //getline(list4, line4);
     }
-  cout <<"Filename: "<< line1 << endl;
+  //cout <<"Filename: "<< line1 << endl;
 
   Fun4AllInputManager *in_1 = new Fun4AllDstInputManager("DSTin1");
   in_1->AddFile(line1);
@@ -103,16 +103,16 @@ int run_macro(int nproc = 0)
   int cont = 0;
   */
   // cin >> cont;
-  cout << "test2" << endl;
-  MDCTreeMaker *tt = new MDCTreeMaker( filename );
+  //cout << "test2" << endl;
+  MDCTreeMaker *tt = new MDCTreeMaker( filename, datormc, debug );
   //cout << "test3" << endl;
   se->registerSubsystem( tt );
-  cout << "test4" << endl;
+  //cout << "test4" << endl;
   se->Print("NODETREE");
   se->run();
-  cout << "test5" << endl;
+  //cout << "test5" << endl;
   se->End();
-  std::cout << "All done" << std::endl;
+  //std::cout << "All done" << std::endl;
   delete se;
   //cout << "test6" << endl;
   gSystem->Exit(0);
