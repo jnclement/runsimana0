@@ -27,13 +27,15 @@
 #include <algorithm>
 #include "TChain.h"
 
-int merge_root(int nfiles, string tag, int datormc)
+int merge_root(int nfiles, string tag, int datormc, int cor)
 {
   TChain ch("ttree");
   string filename;
   string base = "output/evt/events_"+tag+(tag!=""?"_":"");
   string dmc = (!datormc?"data_":"mc_");
+  string cuc = (cor?"cor_":"unc_");
   base += dmc;
+  base += cuc;
   string ext = ".root";
   for(int i=0; i<nfiles; i++)
     {

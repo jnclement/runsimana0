@@ -24,12 +24,13 @@ R__LOAD_LIBRARY(libfun4all.so)
 R__LOAD_LIBRARY(libmdctreemaker.so)
 R__LOAD_LIBRARY(libcalo_io.so)
 R__LOAD_LIBRARY(libcalo_reco.so)
-int run_dETdeta(int nproc = 0, string tag = "", int datormc = 0, int debug = 0)
+int run_dETdeta(int nproc = 0, string tag = "", int datormc = 0, int debug = 0, int nevt = 0, int correct = 1)
 {
   int verbosity = 0;
-  string filename = "events_"+tag+(tag==""?"":"_");
+  string filename = "output/evt/events_"+tag+(tag==""?"":"_");
   string dattag = (datormc?"mc":"data");
-  filename += dattag + "_" + to_string(nproc);
+  string cortag = (correct?"cor":"unc");
+  filename += dattag + "_"+cortag+"_" + to_string(nproc);
   filename += ".root";
   FROG *fr = new FROG();
     
@@ -88,10 +89,10 @@ int run_dETdeta(int nproc = 0, string tag = "", int datormc = 0, int debug = 0)
   // The calibrations have a validity range set by the beam clock which is not read out of the prdfs as of now
   rc->set_uint64Flag("TIMESTAMP",0);
   int cont = 0;
-  MDCTreeMaker *tt = new MDCTreeMaker( filename, datormc, debug );
+  MDCTreeMaker *tt = new MDCTreeMaker( filename, datormc, debug, correct );
   se->registerSubsystem( tt );
   se->Print("NODETREE");
-  se->run();
+  se->run(nevt);
   se->End();
   delete se;
   gSystem->Exit(0);
