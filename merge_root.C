@@ -54,7 +54,7 @@ int merge_root(int nfiles, string tag, int datormc, int cor)
 	  continue;
 	}
     }
-  filename = "results/merged_dEdeta_" +tag+(tag!=""?"_":"") + dmc + to_string(nfiles) + ext;
+  filename = "results/merged_dEdeta_" +tag+(tag!=""?"_":"") + dmc + cuc + to_string(nfiles) + ext;
   ch.Merge(filename.c_str());
   return 0;
 }
