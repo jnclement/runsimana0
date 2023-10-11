@@ -1,5 +1,5 @@
 executable = merge.sh
-arguments = 71 20231009 0 0
+arguments = 500 20231009 1 1
 output = output/out/outputmerge.out
 should_transfer_files	= IF_NEEDED
 when_to_transfer_output = ON_EXIT
