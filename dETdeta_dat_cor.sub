@@ -1,5 +1,5 @@
 executable = dETdeta.sh
-arguments = $(Process) 20231011_nopileup 0 0 0 1
+arguments = $(Process) 20231016_nopileup_21615 0 0 0 1
 output = output/out/output$(Process).out
 transfer_input_files	= /sphenix/user/jocl/projects/testinstall/lib/libmdctreemaker.so
 should_transfer_files	= IF_NEEDED
