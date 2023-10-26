@@ -1,5 +1,5 @@
 executable = merge.sh
-arguments = 71 20231023_nopileup 0 1
+arguments = 71 20231026_nopileup 0 1
 should_transfer_files	= IF_NEEDED
 when_to_transfer_output = ON_EXIT
 error			= output/err/errormerge_dat_cor.err
