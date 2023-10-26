@@ -11,8 +11,8 @@
 #include <TSystem.h>
 #include "mdctreemaker/MDCTreeMaker.h"
 #include <caloreco/CaloTowerCalib.h>
-#include <g4bbc/BbcDigitization.h>
-#include <bbc/BbcReco.h>
+#include <g4mbd/MbdDigitization.h>
+#include <mbd/MbdReco.h>
 #include <frog/FROG.h>
 
 using namespace std;
@@ -25,7 +25,7 @@ R__LOAD_LIBRARY(libfun4all.so)
 R__LOAD_LIBRARY(libmdctreemaker.so)
 R__LOAD_LIBRARY(libcalo_io.so)
 R__LOAD_LIBRARY(libcalo_reco.so)
-R__LOAD_LIBRARY(libg4bbc.so)
+R__LOAD_LIBRARY(libg4mbd.so)
 int run_dETdeta(int nproc = 0, string tag = "", int datormc = 0, int debug = 0, int nevt = 0, int correct = 1)
 {
   int verbosity = 0;
@@ -45,7 +45,7 @@ int run_dETdeta(int nproc = 0, string tag = "", int datormc = 0, int debug = 0, 
   Fun4AllServer *se = Fun4AllServer::instance();
   se->Verbosity( verbosity );
   // just if we set some flags somewhere in this macro
-  recoConsts *rc = recoConsts::instance();
+  recoConsts *rc =  recoConsts::instance();
   ifstream list1;
   string line1;
   ifstream list2;
@@ -98,18 +98,26 @@ int run_dETdeta(int nproc = 0, string tag = "", int datormc = 0, int debug = 0, 
   // The calibrations have a validity range set by the beam clock which is not read out of the prdfs as of now
   rc->set_uint64Flag("TIMESTAMP",0);
   int cont = 0;
-  auto bbcdigi = new BbcDigitization();
-  auto bbcreco = new BbcReco();
-  se->registerSubsystem(bbcdigi);
-  se->registerSubsystem(bbcreco);
+  MbdDigitization* mbddigi;
+  MbdReco* mbdreco;
+  if(datormc)
+    {
+      mbdreco = new MbdReco();
+      mbddigi = new MbdDigitization();
+      se->registerSubsystem(mbddigi);
+      se->registerSubsystem(mbdreco);
+    }
   MDCTreeMaker *tt = new MDCTreeMaker( filename, datormc, debug, correct );
   se->registerSubsystem( tt );
   se->Print("NODETREE");
   se->run(nevt);
+  cout << "Ran all events" << endl;
   se->End();
+  cout << "Ended server" << endl;
   delete se;
+  cout << "Deleted server" << endl;
   gSystem->Exit(0);
-  
+  cout << "Exited gSystem" << endl;
   return 0;
 
 }

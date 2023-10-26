@@ -1,5 +1,5 @@
 executable = merge.sh
-arguments = 71 20231016_nopileup_21615 0 0
+arguments = 71 20231018_nopileup 0 0
 output = output/out/outputmerge.out
 should_transfer_files	= IF_NEEDED
 when_to_transfer_output = ON_EXIT

@@ -1,5 +1,7 @@
-B#!/bin/bash
+#!/bin/bash
 
-for file in merge_*.sub; do
-    condor_submit $file
+for COR in cor unc; do
+    for DM in dat; do
+	condor_submit merge_$DM\_$COR.sub
+    done
 done
