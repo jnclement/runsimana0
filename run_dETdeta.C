@@ -14,11 +14,11 @@
 #include <g4mbd/MbdDigitization.h>
 #include <mbd/MbdReco.h>
 #include <frog/FROG.h>
-
+#include <centrality/DansSpecialVertex.h>
 using namespace std;
 
 R__LOAD_LIBRARY(libFROG.so)
-
+R__LOAD_LIBRARY(libdansspecialvertex.so)
 R__LOAD_LIBRARY(libg4jets.so)
 R__LOAD_LIBRARY(libg4vertex.so)
 R__LOAD_LIBRARY(libfun4all.so)
@@ -106,6 +106,15 @@ int run_dETdeta(int nproc = 0, string tag = "", int datormc = 0, int debug = 0, 
       mbddigi = new MbdDigitization();
       se->registerSubsystem(mbddigi);
       se->registerSubsystem(mbdreco);
+    }
+  int runnumber = 21615;
+  DansSpecialVertex *dsv;
+  if(!datormc)
+    {
+      dsv = new DansSpecialVertex("DansSpecialVertex", "dump.root");
+      dsv->SetRunNumber(runnumber);
+      dsv->Verbosity(0);
+      se->registerSubsystem(dsv);
     }
   MDCTreeMaker *tt = new MDCTreeMaker( filename, datormc, debug, correct );
   se->registerSubsystem( tt );
