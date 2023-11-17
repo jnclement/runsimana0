@@ -1,5 +1,5 @@
 executable = merge.sh
-arguments = 501 20231026_nopileup 1 1
+arguments = 555 20231108_nopileup_wzs_nodanvtx 1 1
 should_transfer_files	= IF_NEEDED
 when_to_transfer_output = ON_EXIT
 error			= output/err/errormerge_mc_cor.err

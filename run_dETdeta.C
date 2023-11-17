@@ -15,6 +15,8 @@
 #include <mbd/MbdReco.h>
 #include <frog/FROG.h>
 #include <centrality/DansSpecialVertex.h>
+#include <ffamodules/CDBInterface.h>
+#include <fun4all/Fun4AllRunNodeInputManager.h>
 using namespace std;
 
 R__LOAD_LIBRARY(libFROG.so)
@@ -26,7 +28,15 @@ R__LOAD_LIBRARY(libmdctreemaker.so)
 R__LOAD_LIBRARY(libcalo_io.so)
 R__LOAD_LIBRARY(libcalo_reco.so)
 R__LOAD_LIBRARY(libg4mbd.so)
-int run_dETdeta(int nproc = 0, string tag = "", int datormc = 0, int debug = 0, int nevt = 0, int correct = 1)
+R__LOAD_LIBRARY(libmbd_io.so)
+R__LOAD_LIBRARY(libmbd.so)
+R__LOAD_LIBRARY(libffamodules.so)
+bool file_exists(const char* filename)
+{
+  std::ifstream infile(filename);
+  return infile.good();
+}
+int run_dETdeta(int nproc = 0, string tag = "", int datormc = 0, int debug = 0, int nevt = 0, int correct = 1, int zs = 0)
 {
   int verbosity = 0;
   string filename = "output/evt/events_"+tag+(tag==""?"":"_");
@@ -46,6 +56,7 @@ int run_dETdeta(int nproc = 0, string tag = "", int datormc = 0, int debug = 0, 
   se->Verbosity( verbosity );
   // just if we set some flags somewhere in this macro
   recoConsts *rc =  recoConsts::instance();
+  rc->set_uint64Flag("TIMESTAMP",21615);
   ifstream list1;
   string line1;
   ifstream list2;
@@ -56,14 +67,15 @@ int run_dETdeta(int nproc = 0, string tag = "", int datormc = 0, int debug = 0, 
   string line4;
   if(datormc)
     {
-      list1.open("/sphenix/user/jocl/projects/sandbox/run/dst_calo_nozero.list");
+      if(!zs) list1.open("/sphenix/user/jocl/projects/sandbox/run/dst_calo_nozero.list");
+      else list1.open("/sphenix/user/jocl/projects/sandbox/run/dst_calo_cluster.list");
       list2.open("/sphenix/user/jocl/projects/sandbox/run/dst_global.list");
       list3.open("/sphenix/user/jocl/projects/sandbox/run/dst_truth.list");
       list4.open("/sphenix/user/jocl/projects/sandbox/run/g4hits.list");
     }
   else
     {
-      list1.open("/sphenix/user/jocl/projects/sandbox/run/dsts_dEdeta_study", ifstream::in);
+      list1.open("/sphenix/user/jocl/projects/sandbox/run/dsts_production", ifstream::in);
     }
   for(int i=0; i<nproc+1; i++)
     {
@@ -94,9 +106,10 @@ int run_dETdeta(int nproc = 0, string tag = "", int datormc = 0, int debug = 0, 
       se->registerInputManager(in_3);
       se->registerInputManager(in_4);
     }
-  rc->set_StringFlag("CDB_GLOBALTAG","ProdA_2023"); // this points to the global tag in the CDB
-  // The calibrations have a validity range set by the beam clock which is not read out of the prdfs as of now
-  rc->set_uint64Flag("TIMESTAMP",0);
+  // this points to the global tag in the CDB
+  rc->set_StringFlag("CDB_GLOBALTAG","2023p003");//"ProdA_2023");                                     
+// The calibrations have a validity range set by the beam clock which is not read out of the prdfs as of now
+  //rc->set_IntFlag("RANDOMSEED",158804);
   int cont = 0;
   MbdDigitization* mbddigi;
   MbdReco* mbdreco;
@@ -108,6 +121,7 @@ int run_dETdeta(int nproc = 0, string tag = "", int datormc = 0, int debug = 0, 
       se->registerSubsystem(mbdreco);
     }
   int runnumber = 21615;
+  /*
   DansSpecialVertex *dsv;
   if(!datormc)
     {
@@ -116,6 +130,14 @@ int run_dETdeta(int nproc = 0, string tag = "", int datormc = 0, int debug = 0, 
       dsv->Verbosity(0);
       se->registerSubsystem(dsv);
     }
+  */
+  Fun4AllInputManager *intrue2 = new Fun4AllRunNodeInputManager("DST_GEO");
+  
+  CDBInterface *cdb = CDBInterface::instance();
+  std::string geoLocation = cdb->getUrl("calo_geo");
+  intrue2->AddFile(geoLocation);
+  se->registerInputManager(intrue2);
+
   MDCTreeMaker *tt = new MDCTreeMaker( filename, datormc, debug, correct );
   se->registerSubsystem( tt );
   se->Print("NODETREE");

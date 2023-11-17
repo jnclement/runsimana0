@@ -1,5 +1,5 @@
-for COR in cor; do
-    for DM in dat mc; do
-	condor_submit dETdeta_$DM\_$COR.sub
+for ZS in nz; do
+    for DM in mc dat; do
+	condor_submit dETdeta_$DM\_$ZS.sub
     done
 done

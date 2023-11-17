@@ -1,7 +1,7 @@
 #!/bin/bash
 
-for COR in cor unc; do
-    for DM in dat; do
-	condor_submit merge_$DM\_$COR.sub
+for ZS in nzs; do
+    for DM in mc dat; do
+	condor_submit merge_$DM\_$ZS.sub
     done
 done
