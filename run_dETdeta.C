@@ -14,7 +14,6 @@
 #include <g4mbd/MbdDigitization.h>
 #include <mbd/MbdReco.h>
 #include <frog/FROG.h>
-#include <centrality/DansSpecialVertex.h>
 #include <ffamodules/CDBInterface.h>
 #include <fun4all/Fun4AllRunNodeInputManager.h>
 #include <g4centrality/PHG4CentralityReco.h>
@@ -25,7 +24,6 @@ using namespace std;
 R__LOAD_LIBRARY(libg4centrality.so)
 R__LOAD_LIBRARY(libEnergyCorrection.so)
 R__LOAD_LIBRARY(libFROG.so)
-R__LOAD_LIBRARY(libdansspecialvertex.so)
 R__LOAD_LIBRARY(libg4jets.so)
 R__LOAD_LIBRARY(libg4vertex.so)
 R__LOAD_LIBRARY(libfun4all.so)
@@ -175,6 +173,12 @@ int run_dETdeta(int nproc = 0, string tag = "", int datormc = 0, int debug = 0, 
   HcalRawTowerBuilder *OTowerBuilder;
   RawTowerBuilder *ETowerBuilder;
   HcalRawTowerBuilder *ITowerBuilder;
+  RawTowerDigitizer *OHTowerDigitizer;
+  RawTowerDigitizer *IHTowerDigitizer;
+  RawTowerDigitizer *EMTowerDigitizer;
+  RawTowerCalibration *EMTowerCalibration;
+  RawTowerCalibration *IHTowerCalibration;
+  RawTowerCalibration *OHTowerCalibration;
   if(upweightb)
     {
       ETowerBuilder = new RawTowerBuilder("EmcRawTowerBuilder");
@@ -217,14 +221,150 @@ int run_dETdeta(int nproc = 0, string tag = "", int datormc = 0, int debug = 0, 
       }
       OTowerBuilder->Verbosity(0);
       if(upweightb && datormc) se->registerSubsystem(OTowerBuilder);
-    }
+
+      
+      OHTowerDigitizer = new RawTowerDigitizer("HcalOutRawTowerDigitizer");
+      OHTowerDigitizer->set_variable_pedestal(true);
+      OHTowerDigitizer->set_pedstal_width_ADC(0);
+      OHTowerDigitizer->Detector("HCALOUT");
+      //  TowerDigitizer->set_raw_tower_node_prefix("RAW_LG");
+      OHTowerDigitizer->set_digi_algorithm(G4HCALOUT::TowerDigi);
+      OHTowerDigitizer->set_pedstal_central_ADC(0);
+      OHTowerDigitizer->set_pedstal_width_ADC(0);  // From Jin's guess. No EMCal High Gain data yet! TODO: update
+      OHTowerDigitizer->set_photonelec_ADC(16. / 5.);
+      OHTowerDigitizer->set_photonelec_yield_visible_GeV(16. / 5 / (0.2e-3));
+      OHTowerDigitizer->set_zero_suppression_ADC(-999);                  // no-zero suppression
+      OHTowerDigitizer->Verbosity(verbosity);
+      if (!Enable::HCALOUT_G4Hit) OHTowerDigitizer->set_towerinfo(RawTowerDigitizer::ProcessTowerType::kTowerInfoOnly);  // just use towerinfo
+      se->registerSubsystem(OHTowerDigitizer);
+      const double visible_sample_fraction_HCALOUT = 3.38021e-02;  // /gpfs/mnt/gpfs04/sphenix/user/jinhuang/prod_analysis/hadron_shower_res_nightly/./G4Hits_sPHENIX_pi-_eta0_16GeV.root_qa.rootQA_Draw_HCALOUT_G4Hit.pdf
+
+
+      IHTowerDigitizer = new RawTowerDigitizer("HcalInRawTowerDigitizer");
+      IHTowerDigitizer->set_variable_pedestal(true);
+      IHTowerDigitizer->Detector("HCALIN");
+      //  TowerDigitizer->set_raw_tower_node_prefix("RAW_LG");
+      IHTowerDigitizer->set_digi_algorithm(G4HCALIN::TowerDigi);
+      IHTowerDigitizer->set_pedstal_central_ADC(0);
+      IHTowerDigitizer->set_pedstal_width_ADC(0);  // From Jin's guess. No EMCal High Gain data yet! TODO: update
+      IHTowerDigitizer->set_photonelec_ADC(32. / 5.);
+      IHTowerDigitizer->set_photonelec_yield_visible_GeV(32. / 5 / (0.4e-3));
+      IHTowerDigitizer->set_zero_suppression_ADC(-999);                 // no-zero suppression
+      IHTowerDigitizer->Verbosity(verbosity);
+      if (!Enable::HCALIN_G4Hit) IHTowerDigitizer->set_towerinfo(RawTowerDigitizer::ProcessTowerType::kTowerInfoOnly);  // just use towerinfo
+      se->registerSubsystem(IHTowerDigitizer);
+
+      // Default sampling fraction for SS310
+      double visible_sample_fraction_HCALIN = 0.0631283;                                //, /gpfs/mnt/gpfs04/sphenix/user/jinhuang/prod_analysis/hadron_shower_res_nightly/./G4Hits_sPHENIX_pi-_eta0_16GeV-0000.root_qa.rootQA_Draw_HCALIN_G4Hit.pdf
+
+      if (G4HCALIN::inner_hcal_material_Al) visible_sample_fraction_HCALIN = 0.162166;  // for "G4_Al", Abhisek Sen <sen.abhisek@gmail.com>
+
+      float sampling_fraction = 2e-02;                 // 2017 Tilt porjective SPACAL, tower-by-tower calibration
+      const double photoelectron_per_GeV = 500;  // 500 photon per total GeV deposition
+
+      RawTowerDigitizer *EMTowerDigitizer = new RawTowerDigitizer("EmcRawTowerDigitizer");
+      EMTowerDigitizer->set_pedstal_width_ADC(0);
+      EMTowerDigitizer->Detector("CEMC");
+      EMTowerDigitizer->Verbosity(verbosity);
+      EMTowerDigitizer->set_digi_algorithm(G4CEMC::TowerDigi);
+      EMTowerDigitizer->set_variable_pedestal(true);  // read ped central and width from calibrations file comment next 2 lines if true
+      //   TowerDigitizer->set_pedstal_central_ADC(0);
+      //   TowerDigitizer->set_pedstal_width_ADC(8);  // eRD1 test beam setting
+      EMTowerDigitizer->set_photonelec_ADC(1);                // not simulating ADC discretization error
+      EMTowerDigitizer->set_photonelec_yield_visible_GeV(photoelectron_per_GeV / sampling_fraction);
+      EMTowerDigitizer->set_variable_zero_suppression(true);  // read zs values from calibrations file comment next line if true
+      EMTowerDigitizer->set_zero_suppression_ADC(-999);  // eRD1 test beam setting
+      if (!Enable::CEMC_G4Hit) EMTowerDigitizer->set_towerinfo(RawTowerDigitizer::ProcessTowerType::kTowerInfoOnly);  // just use towerinfo
+      if (Enable::CDB)
+	{
+	  EMTowerDigitizer->GetParameters().ReadFromCDB("EMCTOWERCALIB");
+	}
+      else
+	{
+	  EMTowerDigitizer->GetParameters().ReadFromFile("CEMC", "xml", 0, 0,
+						       string(getenv("CALIBRATIONROOT")) + string("/CEMC/TowerCalibCombinedParams_2020/"));  // calibration database
+	}
+      se->registerSubsystem(EMTowerDigitizer);
+
+
+      
+
+      RawTowerCalibration *OHTowerCalibration = new RawTowerCalibration("HcalOutRawTowerCalibration");
+      OHTowerCalibration->Detector("HCALOUT");
+      //  TowerCalibration->set_raw_tower_node_prefix("RAW_LG");
+      //  TowerCalibration->set_calib_tower_node_prefix("CALIB_LG");
+      OHTowerCalibration->set_calib_algorithm(RawTowerCalibration::kSimple_linear_calibration);
+      if (G4HCALOUT::TowerDigi == RawTowerDigitizer::kNo_digitization)
+	{
+	  // 0.033 extracted from electron sims (edep(scintillator)/edep(total))
+	  OHTowerCalibration->set_calib_const_GeV_ADC(1. / 0.033);
+	}
+      else
+	{
+	  OHTowerCalibration->set_calib_const_GeV_ADC(0.2e-3 / visible_sample_fraction_HCALOUT);
+	}
+      OHTowerCalibration->set_pedstal_ADC(0);
+      OHTowerCalibration->Verbosity(verbosity);
+      if (!Enable::HCALOUT_G4Hit) OHTowerCalibration->set_towerinfo(RawTowerCalibration::ProcessTowerType::kTowerInfoOnly);  // just use towerinfo
+      se->registerSubsystem(OHTowerCalibration);
+
+	RawTowerCalibration *IHTowerCalibration = new RawTowerCalibration("HcalInRawTowerCalibration");
+      IHTowerCalibration->Detector("HCALIN");
+      //  IHTowerCalibration->set_raw_tower_node_prefix("RAW_LG");
+      //  IHTowerCalibration->set_calib_tower_node_prefix("CALIB_LG");
+      IHTowerCalibration->set_calib_algorithm(RawTowerCalibration::kSimple_linear_calibration);
+      if (G4HCALIN::TowerDigi == RawTowerDigitizer::kNo_digitization)
+	{
+	  // 0.176 extracted from electron sims (edep(scintillator)/edep(total))
+	  IHTowerCalibration->set_calib_const_GeV_ADC(1. / 0.176);
+	}
+      else
+	{
+	  IHTowerCalibration->set_calib_const_GeV_ADC(0.4e-3 / visible_sample_fraction_HCALIN);
+	}
+      IHTowerCalibration->set_pedstal_ADC(0);
+      IHTowerCalibration->Verbosity(verbosity);
+      if (!Enable::HCALIN_G4Hit) IHTowerCalibration->set_towerinfo(RawTowerCalibration::ProcessTowerType::kTowerInfoOnly);  // just use towerinfo
+      se->registerSubsystem(IHTowerCalibration);
+
+      
+
+      RawTowerCalibration *EMTowerCalibration = new RawTowerCalibration("EmcRawTowerCalibration");
+      EMTowerCalibration->Detector("CEMC");
+      EMTowerCalibration->Verbosity(verbosity);
+      if (!Enable::CEMC_G4Hit) EMTowerCalibration->set_towerinfo(RawTowerCalibration::ProcessTowerType::kTowerInfoOnly);  // just use towerinfo
+      if (G4CEMC::TowerDigi == RawTowerDigitizer::kNo_digitization)
+	{
+	  // just use sampling fraction set previously
+	  EMTowerCalibration->set_calib_const_GeV_ADC(1.0 / sampling_fraction);
+	}
+      else
+	{
+	  EMTowerCalibration->set_calib_algorithm(RawTowerCalibration::kTower_by_tower_calibration);
+	  if (Enable::CDB)
+	    {
+	      EMTowerCalibration->GetCalibrationParameters().ReadFromCDB("EMCTOWERCALIB");
+	    }
+	  else
+	    {
+	      EMTowerCalibration->GetCalibrationParameters().ReadFromFile("CEMC", "xml", 0, 0,
+									string(getenv("CALIBRATIONROOT")) + string("/CEMC/TowerCalibCombinedParams_2020/"));  // calibration database
+	    }
+	  EMTowerCalibration->set_variable_GeV_ADC(true);                                                                                                     // read GeV per ADC from calibrations file comment next line if true
+	  //    TowerCalibration->set_calib_const_GeV_ADC(1. / photoelectron_per_GeV / 0.9715);                                                             // overall energy scale based on 4-GeV photon simulations
+	  EMTowerCalibration->set_variable_pedestal(true);  // read pedestals from calibrations file comment next line if true
+	  //TowerCalibration->set_pedstal_ADC(0);
+	}
+      se->registerSubsystem(EMTowerCalibration);
+
+	
+	}
 
   // this points to the global tag in the CDB
   rc->set_StringFlag("CDB_GLOBALTAG","2023p004");//"ProdA_2023");                                     
 // The calibrations have a validity range set by the beam clock which is not read out of the prdfs as of now
   //rc->set_IntFlag("RANDOMSEED",158804);
   int cont = 0;
-  /*
   MbdDigitization* mbddigi;
   MbdReco* mbdreco;
   if(datormc)
@@ -234,7 +374,6 @@ int run_dETdeta(int nproc = 0, string tag = "", int datormc = 0, int debug = 0, 
       se->registerSubsystem(mbddigi);
       se->registerSubsystem(mbdreco);
     }
-  */
   int runnumber = 21615;
   /*
   DansSpecialVertex *dsv;
