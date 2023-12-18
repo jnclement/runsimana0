@@ -2,10 +2,10 @@
 #include <fun4all/Fun4AllInputManager.h>
 #include <fun4all/Fun4AllDstInputManager.h>
 #include <fun4all/SubsysReco.h>
-#include <jetbase/FastJetAlgo.h>
-#include <jetbase/JetReco.h>
-#include <jetbase/TowerJetInput.h>
-#include <g4jets/TruthJetInput.h>
+//#include <jetbase/FastJetAlgo.h>
+//#include <jetbase/JetReco.h>
+//#include <jetbase/TowerJetInput.h>
+//#include <g4jets/TruthJetInput.h>
 #include <fstream>
 #include <phool/recoConsts.h>
 #include <TSystem.h>
@@ -18,7 +18,7 @@
 #include <fun4all/Fun4AllRunNodeInputManager.h>
 #include <g4centrality/PHG4CentralityReco.h>
 #include <G4Setup_sPHENIX.C>
-#include </sphenix/user/jocl/projects/sandbox/HIJINGcorrection/source/EnergyCorrection.h>
+#include <energycorrection/EnergyCorrection.h>
 using namespace std;
 
 R__LOAD_LIBRARY(libg4centrality.so)
@@ -41,6 +41,7 @@ bool file_exists(const char* filename)
 }
 int run_dETdeta(int nproc = 0, string tag = "", int datormc = 0, int debug = 0, int nevt = 0, int correct = 1, int zs = 0, int upweightb = 0, int doupweight = 0)
 {
+  cout << Enable::CDB << endl;
   int verbosity = 0;
   string filename = "output/evt/events_"+tag+(tag==""?"":"_");
   string dattag = (datormc?"mc":"data");
@@ -60,7 +61,8 @@ int run_dETdeta(int nproc = 0, string tag = "", int datormc = 0, int debug = 0, 
   se->Verbosity( verbosity );
   // just if we set some flags somewhere in this macro
   recoConsts *rc =  recoConsts::instance();
-  rc->set_uint64Flag("TIMESTAMP",21615);
+  rc->set_uint64Flag("TIMESTAMP",23696);
+  rc->set_IntFlag("RANDOMSEED",158804);
   ifstream list1;
   string line1;
   ifstream list2;
@@ -145,13 +147,15 @@ int run_dETdeta(int nproc = 0, string tag = "", int datormc = 0, int debug = 0, 
   PHG4FullProjSpacalCellReco *cemc_cells;
   if(upweightb)
     {
+      
       cemc_cells = new PHG4FullProjSpacalCellReco("CEMCCYLCELLRECO");
       cemc_cells->Detector("CEMC");
-      cemc_cells->Verbosity(0);
+      cemc_cells->Verbosity(1);
       cemc_cells->get_light_collection_model().load_data_file(
 							      string(getenv("CALIBRATIONROOT")) +
 							      string("/CEMC/LightCollection/Prototype3Module.xml"),
 							      "data_grid_light_guide_efficiency", "data_grid_fiber_trans");
+      cemc_cells->checkenergy();
       if(upweightb && datormc) se->registerSubsystem(cemc_cells);
     }
 
@@ -186,6 +190,7 @@ int run_dETdeta(int nproc = 0, string tag = "", int datormc = 0, int debug = 0, 
       ETowerBuilder->set_sim_tower_node_prefix("SIM");
       ETowerBuilder->Verbosity(0);
       if(upweightb && datormc) se->registerSubsystem(ETowerBuilder);
+      ETowerBuilder->checkenergy();
       ITowerBuilder = new HcalRawTowerBuilder("HcalInRawTowerBuilder");
       ITowerBuilder->Detector("HCALIN");
       ITowerBuilder->set_sim_tower_node_prefix("SIM");
@@ -224,13 +229,13 @@ int run_dETdeta(int nproc = 0, string tag = "", int datormc = 0, int debug = 0, 
 
       
       OHTowerDigitizer = new RawTowerDigitizer("HcalOutRawTowerDigitizer");
-      OHTowerDigitizer->set_variable_pedestal(true);
+      //OHTowerDigitizer->set_variable_pedestal(true);
       OHTowerDigitizer->set_pedstal_width_ADC(0);
       OHTowerDigitizer->Detector("HCALOUT");
       //  TowerDigitizer->set_raw_tower_node_prefix("RAW_LG");
       OHTowerDigitizer->set_digi_algorithm(G4HCALOUT::TowerDigi);
       OHTowerDigitizer->set_pedstal_central_ADC(0);
-      OHTowerDigitizer->set_pedstal_width_ADC(0);  // From Jin's guess. No EMCal High Gain data yet! TODO: update
+      //OHTowerDigitizer->set_pedstal_width_ADC(0);  // From Jin's guess. No EMCal High Gain data yet! TODO: update
       OHTowerDigitizer->set_photonelec_ADC(16. / 5.);
       OHTowerDigitizer->set_photonelec_yield_visible_GeV(16. / 5 / (0.2e-3));
       OHTowerDigitizer->set_zero_suppression_ADC(-999);                  // no-zero suppression
@@ -241,7 +246,7 @@ int run_dETdeta(int nproc = 0, string tag = "", int datormc = 0, int debug = 0, 
 
 
       IHTowerDigitizer = new RawTowerDigitizer("HcalInRawTowerDigitizer");
-      IHTowerDigitizer->set_variable_pedestal(true);
+      //IHTowerDigitizer->set_variable_pedestal(false);
       IHTowerDigitizer->Detector("HCALIN");
       //  TowerDigitizer->set_raw_tower_node_prefix("RAW_LG");
       IHTowerDigitizer->set_digi_algorithm(G4HCALIN::TowerDigi);
@@ -263,18 +268,20 @@ int run_dETdeta(int nproc = 0, string tag = "", int datormc = 0, int debug = 0, 
       const double photoelectron_per_GeV = 500;  // 500 photon per total GeV deposition
 
       RawTowerDigitizer *EMTowerDigitizer = new RawTowerDigitizer("EmcRawTowerDigitizer");
-      EMTowerDigitizer->set_pedstal_width_ADC(0);
+      //EMTowerDigitizer->set_pedstal_width_ADC(0);
       EMTowerDigitizer->Detector("CEMC");
       EMTowerDigitizer->Verbosity(verbosity);
       EMTowerDigitizer->set_digi_algorithm(G4CEMC::TowerDigi);
       EMTowerDigitizer->set_variable_pedestal(true);  // read ped central and width from calibrations file comment next 2 lines if true
-      //   TowerDigitizer->set_pedstal_central_ADC(0);
-      //   TowerDigitizer->set_pedstal_width_ADC(8);  // eRD1 test beam setting
+      //EMTowerDigitizer->set_pedstal_central_ADC(0);
+      //EMTowerDigitizer->set_pedstal_width_ADC(0);  // eRD1 test beam setting
       EMTowerDigitizer->set_photonelec_ADC(1);                // not simulating ADC discretization error
       EMTowerDigitizer->set_photonelec_yield_visible_GeV(photoelectron_per_GeV / sampling_fraction);
-      EMTowerDigitizer->set_variable_zero_suppression(true);  // read zs values from calibrations file comment next line if true
+      EMTowerDigitizer->set_variable_zero_suppression(false);  // read zs values from calibrations file comment next line if true
       EMTowerDigitizer->set_zero_suppression_ADC(-999);  // eRD1 test beam setting
       if (!Enable::CEMC_G4Hit) EMTowerDigitizer->set_towerinfo(RawTowerDigitizer::ProcessTowerType::kTowerInfoOnly);  // just use towerinfo
+      //EMTowerDigitizer->GetParameters().ReadFromCDB("EMCTOWERCALIB");
+      
       if (Enable::CDB)
 	{
 	  EMTowerDigitizer->GetParameters().ReadFromCDB("EMCTOWERCALIB");
@@ -284,6 +291,7 @@ int run_dETdeta(int nproc = 0, string tag = "", int datormc = 0, int debug = 0, 
 	  EMTowerDigitizer->GetParameters().ReadFromFile("CEMC", "xml", 0, 0,
 						       string(getenv("CALIBRATIONROOT")) + string("/CEMC/TowerCalibCombinedParams_2020/"));  // calibration database
 	}
+      
       se->registerSubsystem(EMTowerDigitizer);
 
 
@@ -341,6 +349,7 @@ int run_dETdeta(int nproc = 0, string tag = "", int datormc = 0, int debug = 0, 
       else
 	{
 	  EMTowerCalibration->set_calib_algorithm(RawTowerCalibration::kTower_by_tower_calibration);
+	  //	  EMTowerCalibration->GetCalibrationParameters().ReadFromCDB("EMCTOWERCALIB");
 	  if (Enable::CDB)
 	    {
 	      EMTowerCalibration->GetCalibrationParameters().ReadFromCDB("EMCTOWERCALIB");
@@ -353,17 +362,17 @@ int run_dETdeta(int nproc = 0, string tag = "", int datormc = 0, int debug = 0, 
 	  EMTowerCalibration->set_variable_GeV_ADC(true);                                                                                                     // read GeV per ADC from calibrations file comment next line if true
 	  //    TowerCalibration->set_calib_const_GeV_ADC(1. / photoelectron_per_GeV / 0.9715);                                                             // overall energy scale based on 4-GeV photon simulations
 	  EMTowerCalibration->set_variable_pedestal(true);  // read pedestals from calibrations file comment next line if true
-	  //TowerCalibration->set_pedstal_ADC(0);
+	  //EMTowerCalibration->set_pedstal_ADC(0);
 	}
       se->registerSubsystem(EMTowerCalibration);
 
 	
-	}
+    }
 
   // this points to the global tag in the CDB
   rc->set_StringFlag("CDB_GLOBALTAG","2023p004");//"ProdA_2023");                                     
 // The calibrations have a validity range set by the beam clock which is not read out of the prdfs as of now
-  //rc->set_IntFlag("RANDOMSEED",158804);
+  
   int cont = 0;
   MbdDigitization* mbddigi;
   MbdReco* mbdreco;
