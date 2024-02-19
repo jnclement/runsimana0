@@ -17,8 +17,12 @@
 #include <ffamodules/CDBInterface.h>
 #include <fun4all/Fun4AllRunNodeInputManager.h>
 #include <g4centrality/PHG4CentralityReco.h>
-#include <G4Setup_sPHENIX.C>
+//#include <G4Setup_sPHENIX.C>
 #include <energycorrection/EnergyCorrection.h>
+#include </sphenix/user/jocl/projects/MDC2/submit/fm_0_20/pass2calo_nopileup_nozero/rundir/G4_HcalIn_ref.C>
+#include </sphenix/user/jocl/projects/MDC2/submit/fm_0_20/pass2calo_nopileup_nozero/rundir/G4_HcalOut_ref.C>
+#include </sphenix/user/jocl/projects/MDC2/submit/fm_0_20/pass2calo_nopileup_nozero/rundir/G4_CEmc_Spacal.C>
+#include </sphenix/user/jocl/projects/MDC2/submit/fm_0_20/pass2calo_nopileup_nozero/rundir/Fun4All_G4_Calo.C>
 using namespace std;
 
 R__LOAD_LIBRARY(libg4centrality.so)
@@ -39,7 +43,7 @@ bool file_exists(const char* filename)
   std::ifstream infile(filename);
   return infile.good();
 }
-int run_dETdeta(int nproc = 0, string tag = "", int datormc = 0, int debug = 0, int nevt = 0, int correct = 1, int zs = 0, int upweightb = 0, int doupweight = 0)
+int run_dETdeta(int nproc = 0, string tag = "", int datormc = 0, int debug = 0, int nevt = 0, int correct = 1, int zs = 0, int upweightb = 0, int doupweight = 0, int rn = 0)
 {
   cout << Enable::CDB << endl;
   int verbosity = 0;
@@ -61,7 +65,7 @@ int run_dETdeta(int nproc = 0, string tag = "", int datormc = 0, int debug = 0, 
   se->Verbosity( verbosity );
   // just if we set some flags somewhere in this macro
   recoConsts *rc =  recoConsts::instance();
-  rc->set_uint64Flag("TIMESTAMP",23696);
+  rc->set_uint64Flag("TIMESTAMP",rn);
   rc->set_IntFlag("RANDOMSEED",158804);
   ifstream list1;
   string line1;
@@ -81,7 +85,7 @@ int run_dETdeta(int nproc = 0, string tag = "", int datormc = 0, int debug = 0, 
     }
   else
     {
-      list1.open("/sphenix/user/jocl/projects/sandbox/run/dsts_production", ifstream::in);
+      list1.open(("/sphenix/user/jocl/projects/sandbox/run/dst_calo-000"+to_string(rn)+".list").c_str(), ifstream::in);
     }
   for(int i=0; i<nproc+1; i++)
     {
@@ -124,8 +128,8 @@ int run_dETdeta(int nproc = 0, string tag = "", int datormc = 0, int debug = 0, 
       if(upweightb && datormc) se->registerSubsystem(energycorrect);
       energycorrect = new EnergyCorrection();
       energycorrect->SetHitNodeName("G4HIT_HCALIN");
-      if(upweightb && datormc) se->registerSubsystem(energycorrect);
       energycorrect->SetUpWeightTruth(false);
+      if(upweightb && datormc) se->registerSubsystem(energycorrect);
       energycorrect = new EnergyCorrection();
       energycorrect->SetHitNodeName("G4HIT_HCALOUT");
       energycorrect->SetUpWeightTruth(false);
@@ -251,7 +255,7 @@ int run_dETdeta(int nproc = 0, string tag = "", int datormc = 0, int debug = 0, 
       //  TowerDigitizer->set_raw_tower_node_prefix("RAW_LG");
       IHTowerDigitizer->set_digi_algorithm(G4HCALIN::TowerDigi);
       IHTowerDigitizer->set_pedstal_central_ADC(0);
-      IHTowerDigitizer->set_pedstal_width_ADC(0);  // From Jin's guess. No EMCal High Gain data yet! TODO: update
+      IHTowerDigitizer->set_pedstal_width_ADC(1);  // From Jin's guess. No EMCal High Gain data yet! TODO: update
       IHTowerDigitizer->set_photonelec_ADC(32. / 5.);
       IHTowerDigitizer->set_photonelec_yield_visible_GeV(32. / 5 / (0.4e-3));
       IHTowerDigitizer->set_zero_suppression_ADC(-999);                 // no-zero suppression
@@ -361,8 +365,8 @@ int run_dETdeta(int nproc = 0, string tag = "", int datormc = 0, int debug = 0, 
 	    }
 	  EMTowerCalibration->set_variable_GeV_ADC(true);                                                                                                     // read GeV per ADC from calibrations file comment next line if true
 	  //    TowerCalibration->set_calib_const_GeV_ADC(1. / photoelectron_per_GeV / 0.9715);                                                             // overall energy scale based on 4-GeV photon simulations
-	  EMTowerCalibration->set_variable_pedestal(true);  // read pedestals from calibrations file comment next line if true
-	  //EMTowerCalibration->set_pedstal_ADC(0);
+	  //EMTowerCalibration->set_variable_pedestal(true);  // read pedestals from calibrations file comment next line if true
+	  EMTowerCalibration->set_pedstal_ADC(0);
 	}
       se->registerSubsystem(EMTowerCalibration);
 
@@ -400,9 +404,11 @@ int run_dETdeta(int nproc = 0, string tag = "", int datormc = 0, int debug = 0, 
   //std::string geoLocation = cdb->getUrl("calo_geo");
   //intrue2->AddFile(geoLocation);
   //se->registerInputManager(intrue2);
-
+  cout << "test2" << endl;
   MDCTreeMaker *tt = new MDCTreeMaker( filename, datormc, debug, correct );
+  cout << "test3" << endl;
   se->registerSubsystem( tt );
+  cout << "test4" << endl;
   se->Print("NODETREE");
   se->run(nevt);
   cout << "Ran all events" << endl;
