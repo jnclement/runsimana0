@@ -17,6 +17,7 @@
 #include <ffamodules/CDBInterface.h>
 #include <fun4all/Fun4AllRunNodeInputManager.h>
 #include <g4centrality/PHG4CentralityReco.h>
+#include <centrality/CentralityReco.h>
 //#include <G4Setup_sPHENIX.C>
 #include <energycorrection/EnergyCorrection.h>
 #include </sphenix/user/jocl/projects/MDC2/submit/fm_0_20/pass2calo_nopileup_nozero/rundir/G4_HcalIn_ref.C>
@@ -374,7 +375,7 @@ int run_dETdeta(int nproc = 0, string tag = "", int datormc = 0, int debug = 0, 
     }
 
   // this points to the global tag in the CDB
-  rc->set_StringFlag("CDB_GLOBALTAG","2023p004");//"ProdA_2023");                                     
+  rc->set_StringFlag("CDB_GLOBALTAG","2023p009");//"ProdA_2023");                                     
 // The calibrations have a validity range set by the beam clock which is not read out of the prdfs as of now
   
   int cont = 0;
@@ -387,7 +388,10 @@ int run_dETdeta(int nproc = 0, string tag = "", int datormc = 0, int debug = 0, 
       se->registerSubsystem(mbddigi);
       se->registerSubsystem(mbdreco);
     }
-  int runnumber = 21615;
+  //int runnumber = 21615;
+  CentralityReco* cent = new CentralityReco();
+  
+  if(datormc) se->registerSubsystem(cent);
   /*
   DansSpecialVertex *dsv;
   if(!datormc)
