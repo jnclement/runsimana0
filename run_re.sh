@@ -1,0 +1,14 @@
+#!/bin/bash
+
+TAG="20240219_test_re"
+DATMC=0
+DEBUG=0
+NEVT=10
+COR=1
+ZS=0
+UWB=0
+DOUW=0
+RN=21615
+NFILE=1
+
+bash run_everything.sh $TAG $DATMC $DEBUG $NEVT $COR $ZS $UWB $DOUW $RN $NFILE
