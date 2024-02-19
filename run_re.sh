@@ -1,7 +1,7 @@
 #!/bin/bash
 
 TAG="20240219_test_re"
-DATMC=0
+DATMC=1
 DEBUG=0
 NEVT=10
 COR=1

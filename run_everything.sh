@@ -20,7 +20,7 @@ if [ $DATMC -eq 0 ]; then
     CreateDstList.pl --run $RN --cdb 2023p009 --build ana.402 DST_CALO
 fi
 
-if [ $DATMC -eq 1]; then
+if [ $DATMC -eq 1 ]; then
     CreateFileList.pl -type 4 -n 500000 -run 10 -nop DST_GLOBAL DST_CALO_CLUSTER DST_CALO_NOZERO DST_TRUTH G4Hits
 fi
 
